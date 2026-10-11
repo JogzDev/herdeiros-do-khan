@@ -1,0 +1,119 @@
+HERDEIROS DO KHAN - INF1636 - 1ª ITERAÇÃO (componente Model)
+
+COMO ABRIR NO ECLIPSE
+File > Import > General > Existing Projects into Workspace > Select archive file
+(escolher o ZIP). Para rodar os testes: botão direito em test/model/TodosOsTestes.java
+> Run As > JUnit Test. O projeto usa a biblioteca JUnit 4 do próprio Eclipse.
+
+O código-fonte é compatível com Java 8. Não é necessário copiar JARs do JUnit
+para dentro do projeto; o Eclipse resolve a biblioteca indicada no .classpath.
+
+PREPARAÇÃO PELA API
+1. Criar Jogo com as cores e os herdeiros de todos os jogadores.
+2. Consultar getConselheirosSecretosOferecidos(cor) e chamar
+   escolherConselheiroSecreto(cor, indice) para cada jogador.
+3. Para Jochi, consultar getMelhoriasIniciaisOferecidas(cor) e chamar
+   escolherMelhoriaInicial(cor, indice). Cada opção informa tipo, cor e tesouro
+   em um mapa de Strings; a ordem da lista corresponde aos índices da escolha.
+4. Quando isPreparacaoConcluida() retornar true, iniciar as jogadas.
+
+As escolhas iniciais são obrigatórias e explícitas: não há escolha automática
+de carta ou melhoria. Uma jogada durante a preparação retorna false e preserva
+o estado. A carta selecionada não pode ser trocada depois.
+
+ORGANIZAÇÃO
+src/model   pacote Model. Só a classe Jogo é pública; todas as demais (tabuleiro,
+            cartas, peças, jogador...) são não públicas, conforme o princípio da
+            ocultação da informação.
+test/model  casos de teste JUnit 4 (no mesmo pacote, para acessar as classes não
+            públicas). TodosOsTestes.java é a suíte com todos eles.
+
+CLASSES DO MODEL
+Jogo                     API pública. View e Controller usam Strings, inteiros e
+                         coleções desses valores (cores, herdeiros, paradas,
+                         províncias, cidades, tesouros e opções de melhoria).
+                         Cada jogada devolve true se é permitida pelas regras e foi
+                         executada, ou false se não é (nesse caso nada muda).
+Mapa                     grafo do tabuleiro: paradas, rotas, províncias, cidades e
+                         conselheiros, guardados em HashMaps. Contém a busca do
+                         caminho mais barato (pulando yurts próprios).
+MapaProvisorio           dados do mapa (ver "Pendências").
+Parada, Provincia,
+Cidade, Conselheiro      elementos do mapa.
+Jogador                  peões, tributos, tesouros, yurts, cartas, bônus e votos.
+TabuleiroJogador         as 4 colunas, as peças de ativação e as melhorias.
+Herdeiro                 ações iniciais de cada coluna e número de peões dos 5 herdeiros.
+Turno                    estado do turno corrente (ações restantes, recursos virtuais,
+                         paradas visitadas, escolhas pendentes).
+AreaMelhorias            os 5 espaços de melhoria e a pilha.
+TrilhaKurultai           ficha neutra e gatilho do fim do jogo.
+CartaConselheiroAberto   14 cartas; cada constante implementa a sua condição.
+CartaConselheiroSecreto  10 cartas; cada constante mede algo e converte em 0 a 3 votos.
+Enums auxiliares         Regiao, CorColuna, CorJogador, TipoTributo, TipoTesouro,
+                         TipoMelhoria, TipoParada, Acao, PecaBonus.
+
+PRINCÍPIO ABERTO/FECHADO
+Regras e dados estão separados: as cartas são enums com um método abstrato
+implementado por cada constante, os herdeiros são configurados por tabelas de
+ações, e o mapa é montado por chamadas a Mapa.adicionar*. Acrescentar uma carta,
+mudar um herdeiro ou trocar a topologia do mapa não exige mexer nas regras.
+
+REGRAS IMPLEMENTADAS
+Preparação: cidades com 4 tesouros, bônus nos conselheiros, 4 cartas abertas,
+2 cartas secretas por jogador, tributos nas províncias, 5 melhorias reveladas,
+moedas iniciais (1 para o 1º e o 2º jogadores, 2 para os demais) e as
+preparações de Tolui (yurt em Karakorum) e Jochi (melhoria na coluna branca).
+Turno: ativação de coluna (uma por turno, a coluna usada só volta depois da
+branca); movimento (pular yurt próprio sem custo, passar por parada ocupada mas
+não terminar nela, exceto parada dupla e Karakorum); pegar tributo de província
+adjacente a parada visitada; Khan obrigatório, sem permanecer no mesmo lugar,
+abastecendo até 3 peças por província, ou na área de melhorias (moeda e espada
+quando os ícones estão à mostra).
+Ações extras: ataque a cidades (1 espada pelo 1º tesouro do turno, 2 pelos
+seguintes), conquista com yurt e revelação de nova cidade; construção de yurts;
+compra de melhorias por 2 moedas com restrição de cor e sem uso no mesmo turno;
+melhoria grátis ao completar uma linha; entregas aos conselheiros com voto e
+bônus para a primeira entrega; uso das peças de bônus; recursos virtuais das
+melhorias.
+Habilidades: Altani (2 peões), Chagatai (cavalo por espada), Jochi (melhoria
+inicial e cor livre), Tolui (yurt em Karakorum e em parada adjacente),
+Ogedei (tesouro por moeda, exceto o último da cidade).
+Fim: trilha do Kurultai (10/14/16/17 votos), fim por todas as cidades
+conquistadas, término da rodada mais uma rodada completa, influência nas 3
+regiões (tabela da página 15, com as regras de empate), cartas secretas e
+desempate (tesouros não entregues, depois proximidade de Karakorum).
+
+CORREÇÕES E TESTES DE REGRESSÃO
+- Altani escolhe o peão antes da primeira ação que depende de sua posição.
+  Coletar, mover, atacar, construir ou entregar fixa o peão até o próximo turno.
+- As cartas abertas são verificadas imediatamente ao ativar a coluna, incluindo
+  os recursos virtuais das melhorias. O voto não depende de outra ação posterior.
+- Quando todas as melhorias se esgotam, uma recompensa gratuita que não pode
+  mais ser recebida deixa de bloquear o turno. Isso vale também se houver mais
+  de uma linha pendente e a primeira recompensa consumir a última peça.
+- Todos os jogadores resolvem suas escolhas iniciais antes de qualquer jogada.
+  As opções de Jochi podem ser consultadas publicamente sem expor classes do Model.
+- RegressaoTest integra TodosOsTestes e verifica os cenários dessas correções.
+
+VALIDAÇÃO
+A suíte TodosOsTestes reúne 73 casos JUnit 4, incluindo 18 regressões. Todos
+passaram na verificação desta versão. O projeto também foi importado em um
+workspace real do Eclipse e compilado pelo JDT, com as bibliotecas JRE/JUnit
+do próprio Eclipse, sem erros ou avisos. A validação foi feita sem interface
+gráfica (modo headless).
+
+PENDÊNCIAS E SUPOSIÇÕES
+1. Não temos a imagem do tabuleiro principal. MapaProvisorio reproduz a estrutura
+   descrita no manual (3 regiões, Karakorum ao centro, 9 cidades, 6 paradas duplas,
+   4 províncias do Khan com 2 setas cada), mas as ligações são fictícias. Quando a
+   imagem for publicada, basta reescrever MapaProvisorio.criar().
+2. O manual não informa a cor de fundo de cada melhoria dentro de um mesmo tipo;
+   as cores foram distribuídas igualmente entre vermelha, verde e amarela.
+3. A demanda de cada conselheiro do mapa também depende do tabuleiro; a de
+   Karakorum segue a peça de Karakorum (seda, ferro e especiaria).
+4. O manual não detalha o esgotamento total das melhorias. A política adotada
+   encerra recompensas gratuitas indisponíveis e permite prosseguir a partida;
+   não cria peças adicionais. Essa decisão está coberta por testes.
+
+Este é o componente Model da 1ª iteração. Não contém interface gráfica, e o
+mapa provisório ainda não representa fielmente as rotas do tabuleiro físico.

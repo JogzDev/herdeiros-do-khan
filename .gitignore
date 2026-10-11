@@ -1,0 +1,29 @@
+# Compilação Java e dependências locais
+/bin/
+/build/
+/out/
+/target/
+*.class
+*.jar
+
+# Estado local do workspace Eclipse (preservar .project, .classpath e .settings)
+.metadata/
+.recommenders/
+
+# Relatórios e cobertura gerados
+/coverage/
+/reports/
+*.exec
+
+# Arquivos locais de outros editores e do sistema
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+
+# Pacotes de entrega
+*.zip
